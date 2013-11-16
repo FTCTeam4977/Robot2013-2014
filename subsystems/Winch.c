@@ -8,11 +8,3 @@ void setWinchMotor(int speed)
 {
 	motor[winch]=speed;
 }
-
-void setWinchSetpoint(int setpoint)
-{
-}
-
-void updateWinch()
-{
-}

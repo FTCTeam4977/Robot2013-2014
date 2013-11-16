@@ -1,16 +1,8 @@
-/*
- * This file controls:
- * - Collector roller
- * - Collector angle
- */
 
-void setCollectorPosition(int position)
+void setCollectorRoller(bool state, bool inverse = false)
 {
-	servo[collectorAngle1] = position;
-	servo[collectorAngle2] = SERVO_MAXIMUM - position;
-}
-
-void setCollectorRoller(bool state)
-{
-	motor[collectorRoller] = (state ? COLLECTOR_ROLLER_MAXIMUM : 0);
+	int speed = (state ? COLLECTOR_ROLLER_MAXIMUM : 0);
+	if ( inverse )
+		speed = -speed;
+	motor[collector] = speed;
 }

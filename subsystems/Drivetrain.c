@@ -10,22 +10,32 @@ PID drivetrainTurnPID;
 bool drivetrainGyroDrivestraight = true;
 bool drivetrainTurning = false;
 
-// allows for "instant" zeroing... no waiting for an i2c packet
-int drivetrainZeroDistance = 0;
+int drivetrainMaxSpeed = 100;
 
 void setDrivetrainSpeeds(int left, int right)
 {
+	if ( left > drivetrainMaxSpeed )
+		left = drivetrainMaxSpeed;
+	else if ( left < -drivetrainMaxSpeed )
+		left = -drivetrainMaxSpeed;
+		
+	if ( right > drivetrainMaxSpeed )
+		right = drivetrainMaxSpeed;
+	else if ( right < -drivetrainMaxSpeed )
+		right = -drivetrainMaxSpeed;
+	nxtDisplayString(1, "%i - %i", left, right);
+	nxtDisplayString(5, "MS %i", drivetrainMaxSpeed);
 	motor[leftDrive]  = -left;
 	motor[rightDrive] = right;
 }
 
-void setDrivetrainSetpoint(int setpoint)
+void setDrivetrainSetpoint(long setpoint)
 {
 	drivetrainPID.target = setpoint;
 	drivetrainTurning = false;
 }
 
-void setDrivetrainSetpoint(int setpoint, int angle)
+void setDrivetrainSetpoint(long setpoint, int angle)
 {
 	drivetrainPID.target = setpoint;
 	drivetrainTurnPID.target = angle;
@@ -38,9 +48,9 @@ void setDrivetrainAngle(int angle)
 	drivetrainTurning = true;
 }
 
-int getDrivetrainDistance()
+long getDrivetrainDistance()
 {
-	return (-nMotorEncoder[leftDrive]);
+	return ((-nMotorEncoder[leftDrive])+nMotorEncoder[rightDriveEncoder])/2;
 }
 
 bool atDrivetrainSetpoint(int &counter)
@@ -55,6 +65,7 @@ bool atDrivetrainSetpoint(int &counter)
 	}
 	else
 	{
+		nxtDisplayString(0, "%i", drivetrainPID.error);
 		if ( abs(drivetrainPID.error) < DRIVETRAIN_STABLE_ERROR )
 			counter++;
 		else
@@ -66,10 +77,12 @@ bool atDrivetrainSetpoint(int &counter)
 void resetDrivetrainDistance()
 {
 	nMotorEncoder[leftDrive] = 0;
+	nMotorEncoder[rightDriveEncoder] = 0;
 }
 
 void updateDrivetrain()
 {
+	updateGyro();
 	if ( drivetrainTurning )
 	{
 		int output = calcPID(drivetrainTurnPID, getGyroAngle());
@@ -79,8 +92,8 @@ void updateDrivetrain()
 	else
 	{
 		int output = hlLimit(calcPID(drivetrainPID, getDrivetrainDistance()), 100, -100);
-		int left = output;
-		int right = output;
+		int left = hlLimit(output, drivetrainMaxSpeed, -drivetrainMaxSpeed);
+		int right = hlLimit(output, drivetrainMaxSpeed, -drivetrainMaxSpeed);
 		if ( drivetrainGyroDrivestraight )
 		{
 			drivetrainTurnPID.error = drivetrainTurnPID.target-getGyroAngle();
@@ -98,4 +111,27 @@ void drivetrainInit()
 	initPID(drivetrainPID, DRIVETRAIN_P_CONSTANT, DRIVETRAIN_I_CONSTANT, DRIVETRAIN_D_CONSTANT);
 	initPID(drivetrainTurnPID, DRIVETRAIN_TURN_P_CONSTANT, DRIVETRAIN_TURN_I_CONSTANT, DRIVETRAIN_TURN_D_CONSTANT);
 	resetDrivetrainDistance();
+}
+
+
+void synchronousDriveTo(int distance)
+{
+	setDrivetrainSetpoint(distance);
+	int counter = 0;
+	while ( !atDrivetrainSetpoint(counter) )
+	{
+		updateDrivetrain();
+	}
+}
+
+
+void synchronousDriveTurn(int angle)
+{
+	setDrivetrainAngle(angle);
+	int counter = 0;
+	while ( !atDrivetrainSetpoint(counter) )
+	{
+		nxtDisplayString(0, "%i", drivetrainTurnPID.error);
+		updateDrivetrain();
+	}
 }
