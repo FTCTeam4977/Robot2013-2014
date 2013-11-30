@@ -39,6 +39,7 @@ task main()
 	HTIRS2setDSPMode(HTIRS2, DSP_1200);
 	while (nPgmTime < 5000 )
 	{
+		break;
 		int v1,v2,v3,v4,v5;
 		HTIRS2readAllACStrength(HTIRS2, v1,v2,v3,v4,v5);
 		nxtDisplayString(0, "%i       ", gyroData.offset);
@@ -54,51 +55,18 @@ task main()
 	nMotorEncoder[autoArm] = 0;
 	int counter = 0;
 
-	// drive out
-	setDrivetrainSetpoint(4700);
-	drivetrainMaxSpeed = 40;
-	bool threwCube = false;
-	while ( !atDrivetrainSetpoint(counter) )
-	{
-		int v1,v2,v3,v4,v5;
-		if ( HTIRS2readAllACStrength(HTIRS2, v1,v2,v3,v4,v5) )
-		{
-			if ( v4 >= 170 && !threwCube ) // at backet
-			{
-				motor[leftDrive]  = 0;
-				motor[rightDrive] = 0;
-				throwCube();
-				drivetrainMaxSpeed = 100;
-				threwCube = true;
-			}
-			updateDrivetrain();
-		}
-	}
-
-	if ( !threwCube )
-	{
-		throwCube();
-		drivetrainMaxSpeed = 100;
-	}
-
+	synchronousDriveTo(900);
+	throwCube();
 	resetDrivetrainDistance();
-
-	synchronousDriveTo(2300);
-
-	synchronousDriveTurn(30);
-	resetDrivetrainDistance();
-
 	synchronousDriveTo(1000);
-	synchronousDriveTurn(60);
-
+	synchronousDriveTurn(-10);
 	resetDrivetrainDistance();
 
-	synchronousDriveTo(3650);
-	synchronousDriveTurn(0);
+	synchronousDriveTo(2000);
+	synchronousDriveTurn(-90);
+
 	resetDrivetrainDistance();
-
-	synchronousDriveTo(-4800);
-
-	motor[autoArm] = 50;
-	wait1Msec(200);
+	setDrivetrainSpeeds(-100, -100);
+	wait1Msec(1500);
+	setDrivetrainSpeeds(0, 0);
 }
