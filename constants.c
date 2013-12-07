@@ -23,5 +23,5 @@
 #define WINCH_I_CONSTANT 0
 #define WINCH_D_CONSTANT 0
 
-
+// Temporary fix for bad encoder port
 #define rightDriveEncoder collector
